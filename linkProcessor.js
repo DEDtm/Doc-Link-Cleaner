@@ -1,10 +1,10 @@
 /**
  * Google Apps Script for removing, preserving, or adjusting spaces around external links in Google Docs
  * Functions:
- *   removeExternalLinksAndText()       – removes all external links along with their text.
- *   removeExternalLinksKeepText()      – removes only the external links, preserving the text.
- *   addSpacesBeforeExternalLinksSimple() – adds a single space before each external link.
- *   removeSpacesBeforeExternalLinks()  – removes all spaces immediately preceding external links.
+ * removeExternalLinksAndText() – removes all external links along with their text.
+ * removeExternalLinksKeepText() – removes only the external links, preserving the text.
+ * addSpacesBeforeExternalLinksSimple() – adds a single space before each external link.
+ * removeOrganizationAndClientPatterns() – removes organization_* and client_*.md patterns from the document.
  */
 
 function removeExternalLinksAndText() {
@@ -21,22 +21,27 @@ function processExternalLinks(removeText) {
   const docUrl = DocumentApp.getActiveDocument().getUrl().split('#')[0];
   const body = DocumentApp.getActiveDocument().getBody();
   let removedCount = 0;
+  
   const recurse = (element) => {
     if (element.getType() === DocumentApp.ElementType.TEXT) {
       const textElem = element.asText();
       const content = textElem.getText();
       const indices = textElem.getTextAttributeIndices();
+      
       for (let i = indices.length - 1; i >= 0; i--) {
         const start = indices[i];
         const url = textElem.getLinkUrl(start);
         if (!url) continue;
+        
         const internal = url.startsWith('#') || url.startsWith(docUrl) ||
-                         url.includes('#heading=') || url.includes('#bookmark=');
+                        url.includes('#heading=') || url.includes('#bookmark=');
+        
         if (!internal) {
           let end = content.length - 1;
           for (let j = i + 1; j < indices.length; j++) {
             if (indices[j] > start) { end = indices[j] - 1; break; }
           }
+          
           if (removeText) textElem.deleteText(start, end);
           else textElem.setLinkUrl(start, end, null);
           removedCount++;
@@ -48,6 +53,7 @@ function processExternalLinks(removeText) {
       }
     }
   };
+  
   recurse(body);
   return removedCount;
 }
@@ -70,6 +76,7 @@ function addSpacesBeforeExternalLinksSimple() {
         while (linkStart > 0 && textObj.getLinkUrl(linkStart - 1) === url) {
           linkStart--;
         }
+        
         if (linkStart > 0) {
           const charBefore = text.charAt(linkStart - 1);
           if (charBefore !== ' ' && charBefore !== '\n' && charBefore !== '\t') {
@@ -85,38 +92,39 @@ function addSpacesBeforeExternalLinksSimple() {
   Logger.log(`Added spaces before ${addedCount} external link${addedCount !== 1 ? 's' : ''}`);
 }
 
-function removeSpacesBeforeExternalLinks() {
-  const body = DocumentApp.getActiveDocument().getBody();
-  const textElems = [];
-  collectTextElements(body, textElems);
-  let processedCount = 0;
-
-  for (let i = textElems.length - 1; i >= 0; i--) {
-    const element = textElems[i];
-    const text = element.getText();
-    const textObj = element.editAsText();
-    
-    for (let j = text.length - 1; j >= 0; j--) {
-      const url = textObj.getLinkUrl(j);
-      if (url && isExternalLink(url)) {
-        let linkStart = j;
-        while (linkStart > 0 && textObj.getLinkUrl(linkStart - 1) === url) {
-          linkStart--;
-        }
-        let spacesToRemove = 0;
-        for (let k = linkStart - 1; k >= 0 && text.charAt(k) === ' '; k--) {
-          spacesToRemove++;
-        }
-        if (spacesToRemove > 0) {
-          textObj.deleteText(linkStart - spacesToRemove, linkStart - 1);
-          processedCount++;
-        }
-        j = linkStart;
+function removeOrganizationAndClientPatterns() {
+  var doc = DocumentApp.getActiveDocument();
+  var body = doc.getBody();
+  traverseAndRemove(body);
+  
+  function traverseAndRemove(element) {
+    var numChildren = element.getNumChildren();
+    for (var i = numChildren - 1; i >= 0; i--) {
+      var child = element.getChild(i);
+      if (child.getType() === DocumentApp.ElementType.TEXT) {
+        processText(child.asText());
+      } else if (child.getNumChildren) {
+        traverseAndRemove(child);
       }
     }
   }
-
-  Logger.log(`Removed spaces before ${processedCount} external link${processedCount !== 1 ? 's' : ''}`);
+  
+  function processText(textElem) {
+    var text = textElem.getText();
+    var pattern = /\b(?:organization|client)_(\d{10}|\d{12})\.md\b/g;
+    var matches;
+    var offsets = [];
+    
+    while ((matches = pattern.exec(text)) !== null) {
+      offsets.push({start: matches.index, end: matches.index + matches[0].length - 1});
+    }
+    
+    if (offsets.length) {
+      for (var j = offsets.length - 1; j >= 0; j--) {
+        textElem.deleteText(offsets[j].start, offsets[j].end);
+      }
+    }
+  }
 }
 
 function collectTextElements(element, list) {

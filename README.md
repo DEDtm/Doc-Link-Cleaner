@@ -1,6 +1,6 @@
 # Google Apps Script for removing, preserving, or adjusting spaces around external links in Google Docs
 
-A Google Apps Script that provides a unified toolkit for handling external links in Google Docs. It can remove external links (with or without text), add spaces before links, and remove spaces before links.
+A Google Apps Script that provides a unified toolkit for handling external links in Google Docs. It can remove external links (with or without text), add spaces before links, and clean up organization/client pattern strings.
 
 ## ⚙️ How It Works
 
@@ -13,9 +13,11 @@ A Google Apps Script that provides a unified toolkit for handling external links
 
 3. **Space Management**
    - `addSpacesBeforeExternalLinksSimple()` inserts a single space before each external link if one is missing.
-   - `removeSpacesBeforeExternalLinks()` deletes all spaces immediately preceding external links.
 
-4. **Logging**
+4. **Pattern Cleanup**
+   - `removeOrganizationAndClientPatterns()` removes organization_* and client_*.md pattern strings from the document.
+
+5. **Logging**
    Each function logs a concise summary of the number of links processed in the execution log.
 
 ## 🚀 Getting Started
@@ -48,8 +50,8 @@ A Google Apps Script that provides a unified toolkit for handling external links
 - **`addSpacesBeforeExternalLinksSimple()`**
   Adds a single space before each external link if not already present.
 
-- **`removeSpacesBeforeExternalLinks()`**
-  Removes any spaces immediately preceding external links.
+- **`removeOrganizationAndClientPatterns()`**
+  Removes organization_* and client_*.md pattern strings (where * is a 10 or 12 digit number) from the document.
 
 - **`processExternalLinks(removeText)`**
   Internal helper that traverses the document and either removes links or deletes link text based on the `removeText` parameter.
