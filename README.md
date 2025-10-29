@@ -36,7 +36,7 @@ A Google Apps Script that provides a unified toolkit for handling external links
 
 ## ⚠️ Limitations
 
-- Only processes links within the open document; does not affect external or cross-document references.
+- Processes content only within the currently open document.
 - Does not handle specialized document structures like built-in table of contents or sidebar links.
 
 ## 🔧 Functions Overview
@@ -54,10 +54,10 @@ A Google Apps Script that provides a unified toolkit for handling external links
   Removes organization_* and client_*.md pattern strings (where * is a 10 or 12 digit number) from the document.
 
 - **`processExternalLinks(removeText)`**
-  Internal helper that traverses the document and either removes links or deletes link text based on the `removeText` parameter.
+  Internal helper that traverses the document. When `removeText=true`, it deletes the link text; when `removeText=false`, it removes only the URL while preserving the text.
 
 - **`collectTextElements(element, list)`**
   Recursively collects all text elements in the document for processing.
 
 - **`isExternalLink(url)`**
-  Checks whether a URL is external (i.e., not pointing to the current Google Doc).
+  Checks whether a URL is external by verifying it starts with http:// or https:// and does not contain docs.google.com/document. Note: Determination of whether a link belongs to the current document is handled in the `processExternalLinks()` function.
